@@ -1,4 +1,12 @@
+
+
 package loginSignup;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import javax.swing.JOptionPane;
 
 
 public class logIn extends javax.swing.JFrame {
@@ -127,14 +135,51 @@ public class logIn extends javax.swing.JFrame {
     }//GEN-LAST:event_jTextField2ActionPerformed
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        // TODO add your handling code here:
+        String username = jTextField2.getText();
+String password = new String(jPasswordField1.getPassword());
+
+if (validateCredentials(username, password)) {
+    JOptionPane.showMessageDialog(this, "Login successful!");
+    // Proceed to your dashboard window
+    // new Dashboard().setVisible(true);
+    this.dispose();
+} else {
+    JOptionPane.showMessageDialog(this, "Invalid username or password.");
+}
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-       
+       signUp signUpForm = new signUp();
+    signUpForm.setVisible(true);
+    this.dispose(); 
         
     }//GEN-LAST:event_jButton2ActionPerformed
 
+    private boolean validateCredentials(String username, String password) {
+    try {
+        File file = new File("users.txt");
+        if (!file.exists()) {
+            return false;
+        }
+        BufferedReader reader = new BufferedReader(new FileReader(file));
+        String line;
+        while ((line = reader.readLine()) != null) {
+            String[] parts = line.split(",");
+            if (parts.length == 2) {
+                String storedUsername = parts[0];
+                String storedPassword = parts[1];
+                if (storedUsername.equals(username) && storedPassword.equals(password)) {
+                    reader.close();
+                    return true;
+                }
+            }
+        }
+        reader.close();
+    } catch (IOException e) {
+        JOptionPane.showMessageDialog(this, "Error reading users file: " + e.getMessage());
+    }
+    return false;
+}
     /**
      * @param args the command line arguments
      */
