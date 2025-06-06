@@ -1,6 +1,10 @@
 
 package loginSignup;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import javax.swing.JOptionPane;
+
 
 public class signUp extends javax.swing.JFrame {
     
@@ -105,7 +109,16 @@ public class signUp extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        // TODO add your handling code here:
+        String username = jTextField2.getText();
+    String password = new String(jPasswordField1.getPassword());
+
+    if (!username.isEmpty() && !password.isEmpty()) {
+        saveCredentials(username, password);
+        this.dispose(); // Close sign-up form
+        new logIn().setVisible(true); // Go back to login form
+    } else {
+        JOptionPane.showMessageDialog(this, "Please fill in all fields.");
+    }
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private void jTextField1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField1ActionPerformed
@@ -115,6 +128,16 @@ public class signUp extends javax.swing.JFrame {
     private void jTextField2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField2ActionPerformed
        
     }//GEN-LAST:event_jTextField2ActionPerformed
+    private void saveCredentials(String username, String password) {
+    try {
+        FileWriter writer = new FileWriter("users.txt", true); // Append mode
+        writer.write(username + "," + password + "\n");
+        writer.close();
+        JOptionPane.showMessageDialog(this, "Account created successfully!");
+    } catch (IOException e) {
+        JOptionPane.showMessageDialog(this, "Error saving credentials: " + e.getMessage());
+    }
+}
 
   
     public static void main(String args[]) {
