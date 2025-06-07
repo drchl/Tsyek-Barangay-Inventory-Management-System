@@ -52,7 +52,7 @@ public class signUp extends javax.swing.JFrame {
 
         jLabel4.setFont(new java.awt.Font("Tahoma", 0, 24)); // NOI18N
         jLabel4.setForeground(new java.awt.Color(255, 255, 255));
-        jLabel4.setText("Welcome");
+        jLabel4.setText("Welcome!");
         newJPanel1.add(jLabel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(230, 340, -1, -1));
 
         jLayeredPane1.add(newJPanel1);
@@ -142,7 +142,7 @@ public class signUp extends javax.swing.JFrame {
   
     public static void main(String args[]) {
        
-        java.awt.EventQueue.invokeLater(() -> new signUp().setVisible(true));
+        java.awt.EventQueue.invokeLater(() -> new logIn().setVisible(true));
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
