@@ -2,6 +2,7 @@
 
 package loginSignup;
 
+import inventory.InventoryForm;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -31,8 +32,6 @@ public class logIn extends javax.swing.JFrame {
         jLabel2 = new javax.swing.JLabel();
         jTextField2 = new javax.swing.JTextField();
         jButton1 = new javax.swing.JButton();
-        jLabel5 = new javax.swing.JLabel();
-        jButton2 = new javax.swing.JButton();
         jPasswordField1 = new javax.swing.JPasswordField();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
@@ -94,22 +93,6 @@ public class logIn extends javax.swing.JFrame {
         jLayeredPane2.add(jButton1);
         jButton1.setBounds(900, 490, 250, 40);
 
-        jLabel5.setForeground(new java.awt.Color(255, 255, 255));
-        jLabel5.setText("I don\"t have an account");
-        jLayeredPane2.add(jLabel5);
-        jLabel5.setBounds(900, 580, 134, 16);
-
-        jButton2.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
-        jButton2.setForeground(new java.awt.Color(33, 72, 192));
-        jButton2.setText("SIGN UP");
-        jButton2.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton2ActionPerformed(evt);
-            }
-        });
-        jLayeredPane2.add(jButton2);
-        jButton2.setBounds(1040, 570, 110, 40);
-
         jPasswordField1.setBackground(new java.awt.Color(14, 69, 120));
         jPasswordField1.setForeground(new java.awt.Color(255, 255, 255));
         jPasswordField1.setText("jPasswordField1");
@@ -141,19 +124,13 @@ String password = new String(jPasswordField1.getPassword());
 if (validateCredentials(username, password)) {
     JOptionPane.showMessageDialog(this, "Login successful!");
     // Proceed to your dashboard window
-    // new Dashboard().setVisible(true);
+    InventoryForm inventoryForm = new InventoryForm(username);
+    inventoryForm.setVisible(true);
     this.dispose();
 } else {
     JOptionPane.showMessageDialog(this, "Invalid username or password.");
 }
     }//GEN-LAST:event_jButton1ActionPerformed
-
-    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-       signUp signUpForm = new signUp();
-    signUpForm.setVisible(true);
-    this.dispose(); 
-        
-    }//GEN-LAST:event_jButton2ActionPerformed
 
     private boolean validateCredentials(String username, String password) {
     try {
@@ -207,12 +184,10 @@ if (validateCredentials(username, password)) {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton1;
-    private javax.swing.JButton jButton2;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
-    private javax.swing.JLabel jLabel5;
     private javax.swing.JLayeredPane jLayeredPane2;
     private javax.swing.JPasswordField jPasswordField1;
     private javax.swing.JTextField jTextField2;
