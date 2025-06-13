@@ -1,6 +1,4 @@
-
-
-package loginSignup;
+package login;
 
 import inventory.InventoryForm;
 import java.io.BufferedReader;
@@ -8,6 +6,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import javax.swing.JOptionPane;
+import util.AuditLogger;
+
 
 
 public class logIn extends javax.swing.JFrame {
@@ -66,7 +66,7 @@ public class logIn extends javax.swing.JFrame {
 
         jLabel2.setFont(new java.awt.Font("Tahoma", 1, 36)); // NOI18N
         jLabel2.setForeground(new java.awt.Color(255, 255, 255));
-        jLabel2.setText("Log in");
+        jLabel2.setText("Login");
         jLayeredPane2.add(jLabel2);
         jLabel2.setBounds(970, 250, 111, 44);
 
@@ -84,7 +84,7 @@ public class logIn extends javax.swing.JFrame {
 
         jButton1.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
         jButton1.setForeground(new java.awt.Color(33, 72, 192));
-        jButton1.setText("LOG IN");
+        jButton1.setText("Login");
         jButton1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButton1ActionPerformed(evt);
@@ -119,44 +119,44 @@ public class logIn extends javax.swing.JFrame {
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
         String username = jTextField2.getText();
-String password = new String(jPasswordField1.getPassword());
+        String password = new String(jPasswordField1.getPassword());
 
-if (validateCredentials(username, password)) {
-    JOptionPane.showMessageDialog(this, "Login successful!");
-    // Proceed to your dashboard window
-    InventoryForm inventoryForm = new InventoryForm(username);
-    inventoryForm.setVisible(true);
-    this.dispose();
-} else {
-    JOptionPane.showMessageDialog(this, "Invalid username or password.");
-}
+        if (validateCredentials(username, password)) {
+            JOptionPane.showMessageDialog(this, "Login successful!");
+            // Proceed to your dashboard window
+            InventoryForm inventoryForm = new InventoryForm(username);
+            inventoryForm.setVisible(true);
+            this.dispose();
+        } else {
+            JOptionPane.showMessageDialog(this, "Invalid username or password.");
+        }
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private boolean validateCredentials(String username, String password) {
-    try {
-        File file = new File("users.txt");
-        if (!file.exists()) {
-            return false;
-        }
-        BufferedReader reader = new BufferedReader(new FileReader(file));
-        String line;
-        while ((line = reader.readLine()) != null) {
-            String[] parts = line.split(",");
-            if (parts.length == 2) {
-                String storedUsername = parts[0];
-                String storedPassword = parts[1];
-                if (storedUsername.equals(username) && storedPassword.equals(password)) {
-                    reader.close();
-                    return true;
+        try {
+            File file = new File("users.txt");
+            if (!file.exists()) {
+                return false;
+            }
+            BufferedReader reader = new BufferedReader(new FileReader(file));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(",");
+                if (parts.length == 2) {
+                    String storedUsername = parts[0];
+                    String storedPassword = parts[1];
+                    if (storedUsername.equals(username) && storedPassword.equals(password)) {
+                        reader.close();
+                        return true;
+                    }
                 }
             }
+            reader.close();
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, "Error reading users file: " + e.getMessage());
         }
-        reader.close();
-    } catch (IOException e) {
-        JOptionPane.showMessageDialog(this, "Error reading users file: " + e.getMessage());
+        return false;
     }
-    return false;
-}
     /**
      * @param args the command line arguments
      */
