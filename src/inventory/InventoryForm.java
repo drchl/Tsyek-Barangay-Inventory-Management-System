@@ -12,8 +12,19 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import loginSignup.logIn;
+import login.logIn;
+import util.AuditLogger;
 import util.InventoryFileManager;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import javax.swing.JDialog;
+import javax.swing.JTable;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import java.awt.Font;
+import java.awt.BorderLayout;
+import javax.swing.BorderFactory;
 
 /**
  * InventoryForm - Main inventory management interface
@@ -55,28 +66,68 @@ public class InventoryForm extends javax.swing.JFrame {
         // Setup input field formatting and validation
         setupInputFormatting();
         
-        // Setup logout functionality
-        Color defaultLabel12Bg = new Color(4, 63, 106);
-        Color hoverLabel12Bg = new Color(4, 50, 86);
+        // Setup navigation functionality
+        setupNavigation();
+    }
+    
+    /**
+     * Setup navigation panel with hover effects and click handlers
+     */
+    private void setupNavigation() {
+        Color defaultBg = new Color(4, 63, 106);
+        Color hoverBg = new Color(4, 50, 86);
+        Color activeBg = new Color(2, 40, 70);
 
-        jLabel13.setBackground(hoverLabel12Bg);
+        // Setup Inventory button (jLabel13) - currently active
+        jLabel13.setBackground(activeBg);
         jLabel13.setOpaque(true);
+        jLabel13.setForeground(Color.WHITE);
 
-        jLabel12.setBackground(defaultLabel12Bg);
+        // Setup Audit Log button (jLabel14) - add this new button
+        jLabel14.setBackground(defaultBg);
+        jLabel14.setOpaque(true);
+        jLabel14.setForeground(Color.WHITE);
+        
+        jLabel14.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                if (!jLabel14.getBackground().equals(activeBg)) {
+                    jLabel14.setBackground(hoverBg);
+                    jLabel14.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+                }
+                jLabel14.repaint();
+            }
+
+            @Override
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                if (!jLabel14.getBackground().equals(activeBg)) {
+                    jLabel14.setBackground(defaultBg);
+                }
+                jLabel14.repaint();
+            }
+
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                openAuditLogViewer();
+            }
+        });
+
+        // Setup Logout button (jLabel12)
+        jLabel12.setBackground(defaultBg);
         jLabel12.setOpaque(true);
         jLabel12.setForeground(Color.WHITE);
         
         jLabel12.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseEntered(java.awt.event.MouseEvent evt) {
-                jLabel12.setBackground(hoverLabel12Bg);
+                jLabel12.setBackground(hoverBg);
                 jLabel12.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
                 jLabel12.repaint();
             }
 
             @Override
             public void mouseExited(java.awt.event.MouseEvent evt) {
-                jLabel12.setBackground(defaultLabel12Bg);
+                jLabel12.setBackground(defaultBg);
                 jLabel12.setForeground(Color.WHITE);
                 jLabel12.repaint();
             }
@@ -90,11 +141,340 @@ public class InventoryForm extends javax.swing.JFrame {
                     JOptionPane.YES_NO_OPTION
                 );
                 if (result == JOptionPane.YES_OPTION) {
+                    // Log the logout action before disposing
+                    AuditLogger.logLogout(jLabel11.getText()); // jLabel11 contains the username
+
                     dispose();
                     new logIn().setVisible(true);
                 }
             }
         });
+    }
+
+    /**
+     * Open Audit Log Viewer Window
+     */
+    /**
+ * Open Audit Log Viewer Window
+ */
+private void openAuditLogViewer() {
+    try {
+        // Log access to audit log viewer
+        AuditLogger.logInventoryAction(jLabel11.getText(), "VIEW_AUDIT_LOG", "SUCCESS", 
+            "Accessed audit log viewer");
+        
+        // Create the audit log dialog
+        JDialog auditDialog = new JDialog(this, "Audit Log Viewer", true);
+        auditDialog.setSize(1000, 600);
+        auditDialog.setLocationRelativeTo(this);
+        auditDialog.setResizable(true);
+        
+        // Create main panel
+        javax.swing.JPanel mainPanel = new javax.swing.JPanel();
+        mainPanel.setLayout(new BorderLayout());
+        mainPanel.setBackground(new Color(50, 110, 147));
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        
+        // Create title label
+        JLabel titleLabel = new JLabel("AUDIT LOG", JLabel.CENTER);
+        titleLabel.setFont(new Font("Tahoma", Font.BOLD, 24));
+        titleLabel.setForeground(Color.WHITE);
+        titleLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 20, 0));
+        
+        // Create table for audit logs
+        String[] columnNames = {"Timestamp", "Username", "Action", "IP Address", "Status", "Details"};
+        DefaultTableModel auditModel = new DefaultTableModel(columnNames, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; // Make table read-only
+            }
+        };
+        
+        JTable auditTable = new JTable(auditModel);
+        auditTable.setBackground(new Color(217, 217, 217));
+        auditTable.setFont(new Font("Tahoma", Font.PLAIN, 11));
+        auditTable.setRowHeight(25);
+        auditTable.setShowGrid(true);
+        auditTable.setGridColor(new Color(180, 180, 180));
+        auditTable.setSelectionBackground(new Color(70, 130, 180, 100));
+        auditTable.setSelectionForeground(Color.BLACK);
+        
+        // Setup table header
+        JTableHeader header = auditTable.getTableHeader();
+        header.setDefaultRenderer(new javax.swing.table.DefaultTableCellRenderer() {
+            @Override
+            public java.awt.Component getTableCellRendererComponent(javax.swing.JTable table, Object value,
+                    boolean isSelected, boolean hasFocus, int row, int column) {
+
+                javax.swing.JLabel label = (javax.swing.JLabel) super.getTableCellRendererComponent(
+                    table, value, isSelected, hasFocus, row, column
+                );
+
+                label.setBackground(Color.decode("#073559"));
+                label.setForeground(Color.WHITE);
+                label.setOpaque(true);
+                label.setHorizontalAlignment(javax.swing.JLabel.CENTER);
+                label.setFont(new Font("Tahoma", Font.BOLD, 12));
+
+                return label;
+            }
+        });
+        
+        // Load audit log data
+        loadAuditLogData(auditModel);
+        
+        // Create scroll pane
+        JScrollPane scrollPane = new JScrollPane(auditTable);
+        scrollPane.setPreferredSize(new Dimension(950, 400));
+        scrollPane.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(70, 130, 180), 2),
+            BorderFactory.createEmptyBorder(5, 5, 5, 5)
+        ));
+        
+        // Create button panel
+        javax.swing.JPanel buttonPanel = new javax.swing.JPanel();
+        buttonPanel.setBackground(new Color(50, 110, 147));
+        buttonPanel.setBorder(BorderFactory.createEmptyBorder(15, 0, 0, 0));
+        
+        JButton refreshButton = new JButton("Refresh");
+        refreshButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        refreshButton.setBackground(new Color(9, 54, 96));
+        refreshButton.setForeground(Color.WHITE);
+        refreshButton.setPreferredSize(new Dimension(100, 35));
+        refreshButton.setFocusPainted(false);
+        
+        // FIXED REFRESH BUTTON ACTION LISTENER
+        refreshButton.addActionListener(e -> {
+            try {
+                // Log the refresh action BEFORE reloading data
+                AuditLogger.logInventoryAction(jLabel11.getText(), "REFRESH_AUDIT_LOG", "SUCCESS", 
+                    "Refreshed audit log data manually");
+                
+                // Small delay to ensure the log entry is written to file
+                try {
+                    Thread.sleep(150);
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                }
+                
+                // Store current row count for comparison
+                int previousRowCount = auditModel.getRowCount();
+                
+                // Clear existing data
+                auditModel.setRowCount(0);
+                
+                // Reload data
+                loadAuditLogData(auditModel);
+                
+                // Get new row count
+                int newRowCount = auditModel.getRowCount();
+                
+                // Show success message with details
+                String message;
+                if (newRowCount > previousRowCount) {
+                    message = String.format("Audit log refreshed! Found %d new entries. Total: %d entries.", 
+                        newRowCount - previousRowCount, newRowCount);
+                } else if (newRowCount == previousRowCount) {
+                    message = String.format("Audit log refreshed! No new entries. Total: %d entries.", newRowCount);
+                } else {
+                    message = String.format("Audit log refreshed! Showing %d entries.", newRowCount);
+                }
+                
+                JOptionPane.showMessageDialog(auditDialog, message, "Refresh Complete", JOptionPane.INFORMATION_MESSAGE);
+                
+                // Scroll to the bottom to show newest entries
+                if (newRowCount > 0) {
+                    auditTable.scrollRectToVisible(auditTable.getCellRect(newRowCount - 1, 0, true));
+                }
+                
+            } catch (Exception ex) {
+                // Log error during refresh
+                AuditLogger.logInventoryAction(jLabel11.getText(), "REFRESH_AUDIT_LOG_ERROR", "FAILED", 
+                    "Error refreshing audit log: " + ex.getMessage());
+                    
+                JOptionPane.showMessageDialog(auditDialog, 
+                    "Error refreshing audit log: " + ex.getMessage(), 
+                    "Refresh Error", 
+                    JOptionPane.ERROR_MESSAGE);
+                logger.severe("Error refreshing audit log: " + ex.getMessage());
+            }
+        });
+        
+        JButton closeButton = new JButton("Close");
+        closeButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        closeButton.setBackground(new Color(9, 54, 96));
+        closeButton.setForeground(Color.WHITE);
+        closeButton.setPreferredSize(new Dimension(100, 35));
+        closeButton.setFocusPainted(false);
+        closeButton.addActionListener(e -> auditDialog.dispose());
+        
+        buttonPanel.add(refreshButton);
+        buttonPanel.add(javax.swing.Box.createHorizontalStrut(10));
+        buttonPanel.add(closeButton);
+        
+        // Add info label
+        JLabel infoLabel = new JLabel("<html><center>Showing all login/logout activities and system events<br>Double-click on a row to view details</center></html>");
+        infoLabel.setFont(new Font("Segoe UI", Font.ITALIC, 12));
+        infoLabel.setForeground(Color.WHITE);
+        infoLabel.setHorizontalAlignment(JLabel.CENTER);
+        infoLabel.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
+        
+        // Add double-click listener for row details
+        auditTable.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                if (evt.getClickCount() == 2) {
+                    int selectedRow = auditTable.getSelectedRow();
+                    if (selectedRow >= 0) {
+                        showAuditLogDetails(auditModel, selectedRow);
+                    }
+                }
+            }
+        });
+        
+        // Assemble the dialog
+        mainPanel.add(titleLabel, BorderLayout.NORTH);
+        mainPanel.add(scrollPane, BorderLayout.CENTER);
+        
+        javax.swing.JPanel bottomPanel = new javax.swing.JPanel(new BorderLayout());
+        bottomPanel.setBackground(new Color(50, 110, 147));
+        bottomPanel.add(buttonPanel, BorderLayout.CENTER);
+        bottomPanel.add(infoLabel, BorderLayout.SOUTH);
+        
+        mainPanel.add(bottomPanel, BorderLayout.SOUTH);
+        
+        auditDialog.add(mainPanel);
+        auditDialog.setVisible(true);
+        
+    } catch (Exception ex) {
+        JOptionPane.showMessageDialog(this, 
+            "Error opening audit log: " + ex.getMessage(), 
+            "Error", 
+            JOptionPane.ERROR_MESSAGE);
+        logger.severe("Error opening audit log viewer: " + ex.getMessage());
+    }
+}
+    
+    /**
+     * Load audit log data from CSV file
+     */
+    private void loadAuditLogData(DefaultTableModel model) {
+        try {
+            // Initialize audit log if it doesn't exist
+            AuditLogger.initializeAuditLog();
+            
+            BufferedReader reader = new BufferedReader(new FileReader("audit_log.csv"));
+            String line;
+            boolean isHeader = true;
+            
+            while ((line = reader.readLine()) != null) {
+                if (isHeader) {
+                    isHeader = false; // Skip header row
+                    continue;
+                }
+                
+                // Parse CSV line (handle quoted values)
+                String[] data = parseCSVLine(line);
+                if (data.length >= 6) {
+                    model.addRow(data);
+                }
+            }
+            reader.close();
+            
+            if (model.getRowCount() == 0) {
+                // Add a sample row if no data exists
+                model.addRow(new Object[]{
+                    "No audit data available", "", "", "", "", "Please perform some actions to generate audit logs"
+                });
+            }
+            
+        } catch (IOException ex) {
+            // If file doesn't exist or can't be read, add a message row
+            model.addRow(new Object[]{
+                "No audit file found", "", "", "", "", "Audit logging will start after user activities"
+            });
+            logger.info("Audit log file not found - will be created on first log entry");
+        } catch (Exception ex) {
+            model.addRow(new Object[]{
+                "Error loading audit data", "", "", "", "", ex.getMessage()
+            });
+            logger.severe("Error loading audit log data: " + ex.getMessage());
+        }
+    }
+    
+    /**
+     * Parse CSV line handling quoted values
+     */
+    private String[] parseCSVLine(String line) {
+        String[] result = new String[6];
+        boolean inQuotes = false;
+        StringBuilder current = new StringBuilder();
+        int fieldIndex = 0;
+        
+        for (int i = 0; i < line.length(); i++) {
+            char c = line.charAt(i);
+            
+            if (c == '"') {
+                inQuotes = !inQuotes;
+            } else if (c == ',' && !inQuotes) {
+                if (fieldIndex < 6) {
+                    result[fieldIndex++] = current.toString();
+                    current = new StringBuilder();
+                }
+            } else {
+                current.append(c);
+            }
+        }
+        
+        // Add the last field
+        if (fieldIndex < 6) {
+            result[fieldIndex] = current.toString();
+        }
+        
+        // Fill any missing fields with empty strings
+        for (int i = 0; i < 6; i++) {
+            if (result[i] == null) {
+                result[i] = "";
+            }
+        }
+        
+        return result;
+    }
+    
+    /**
+     * Show detailed information for selected audit log entry
+     */
+    private void showAuditLogDetails(DefaultTableModel model, int row) {
+        try {
+            String timestamp = model.getValueAt(row, 0).toString();
+            String username = model.getValueAt(row, 1).toString();
+            String action = model.getValueAt(row, 2).toString();
+            String ipAddress = model.getValueAt(row, 3).toString();
+            String status = model.getValueAt(row, 4).toString();
+            String details = model.getValueAt(row, 5).toString();
+            
+            String message = String.format(
+                "<html><body style='width: 400px; font-family: Arial, sans-serif;'>" +
+                "<h3 style='color: #073559; margin-top: 0;'>Audit Log Details</h3>" +
+                "<table style='width: 100%%; border-collapse: collapse;'>" +
+                "<tr><td style='font-weight: bold; padding: 5px; background-color: #f0f0f0;'>Timestamp:</td><td style='padding: 5px;'>%s</td></tr>" +
+                "<tr><td style='font-weight: bold; padding: 5px; background-color: #f0f0f0;'>Username:</td><td style='padding: 5px;'>%s</td></tr>" +
+                "<tr><td style='font-weight: bold; padding: 5px; background-color: #f0f0f0;'>Action:</td><td style='padding: 5px;'>%s</td></tr>" +
+                "<tr><td style='font-weight: bold; padding: 5px; background-color: #f0f0f0;'>IP Address:</td><td style='padding: 5px;'>%s</td></tr>" +
+                "<tr><td style='font-weight: bold; padding: 5px; background-color: #f0f0f0;'>Status:</td><td style='padding: 5px;'>%s</td></tr>" +
+                "<tr><td style='font-weight: bold; padding: 5px; background-color: #f0f0f0;'>Details:</td><td style='padding: 5px;'>%s</td></tr>" +
+                "</table></body></html>",
+                timestamp, username, action, ipAddress, status, details
+            );
+            
+            JOptionPane.showMessageDialog(this, message, "Audit Log Entry Details", JOptionPane.INFORMATION_MESSAGE);
+            
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, 
+                "Error displaying audit log details: " + ex.getMessage(), 
+                "Error", 
+                JOptionPane.ERROR_MESSAGE);
+        }
     }
     
     /**
@@ -381,9 +761,9 @@ public class InventoryForm extends javax.swing.JFrame {
      * Setup custom scrollbar for the inventory table
      */
     private void setupCustomScrollBar() {
-        // Apply modern scrollbar UI to both vertical and horizontal scrollbars
-        jScrollPane1.getVerticalScrollBar().setUI(new ModernScrollBarUI());
-        jScrollPane1.getHorizontalScrollBar().setUI(new ModernScrollBarUI());
+        // Apply basic scrollbar UI (replaced ModernScrollBarUI)
+        jScrollPane1.getVerticalScrollBar().setUI(new javax.swing.plaf.basic.BasicScrollBarUI());
+        jScrollPane1.getHorizontalScrollBar().setUI(new javax.swing.plaf.basic.BasicScrollBarUI());
         
         // Set scrollbar policies for better appearance
         jScrollPane1.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
@@ -510,13 +890,26 @@ public class InventoryForm extends javax.swing.JFrame {
     }
     
     /**
-     * Load inventory data from CSV file
+     * Load inventory data from CSV file - Enhanced with audit logging
      */
     private void loadInventoryData() {
         try {
             DefaultTableModel model = (DefaultTableModel) inventoryTable.getModel();
+            int initialRowCount = model.getRowCount();
+            
             InventoryFileManager.loadFromFile(model);
+            
+            int finalRowCount = model.getRowCount();
+            
+            // Log successful data loading
+            AuditLogger.logInventoryAction(jLabel11.getText(), "LOAD_INVENTORY", "SUCCESS", 
+                String.format("Loaded inventory data: %d items loaded from file", finalRowCount));
+                
         } catch (Exception ex) {
+            // Log error during data loading
+            AuditLogger.logInventoryAction(jLabel11.getText(), "LOAD_INVENTORY_ERROR", "FAILED", 
+                "Error loading inventory data: " + ex.getMessage());
+                
             JOptionPane.showMessageDialog(this, 
                 "Error loading inventory data: " + ex.getMessage(), 
                 "Load Error", 
@@ -966,6 +1359,7 @@ public class InventoryForm extends javax.swing.JFrame {
         jLabel11 = new javax.swing.JLabel();
         jLabel12 = new javax.swing.JLabel();
         jLabel13 = new javax.swing.JLabel();
+        jLabel14 = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setMinimumSize(new java.awt.Dimension(1440, 1024));
@@ -1225,7 +1619,7 @@ public class InventoryForm extends javax.swing.JFrame {
         jLabel12.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
         jLabel12.setForeground(new java.awt.Color(255, 255, 255));
         jLabel12.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel12.setText("Log out");
+        jLabel12.setText("Logout");
         jLabel12.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
         jLabel12.setOpaque(true);
 
@@ -1234,6 +1628,12 @@ public class InventoryForm extends javax.swing.JFrame {
         jLabel13.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel13.setText("Inventory");
         jLabel13.setOpaque(true);
+
+        jLabel14.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        jLabel14.setForeground(new java.awt.Color(255, 255, 255));
+        jLabel14.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jLabel14.setText("Audit Log");
+        jLabel14.setOpaque(true);
 
         javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);
         jPanel3.setLayout(jPanel3Layout);
@@ -1248,6 +1648,7 @@ public class InventoryForm extends javax.swing.JFrame {
                         .addComponent(jLabel11)))
                 .addGap(84, 84, 84))
             .addComponent(jLabel13, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(jLabel14, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(jLabel12, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         jPanel3Layout.setVerticalGroup(
@@ -1259,9 +1660,11 @@ public class InventoryForm extends javax.swing.JFrame {
                 .addComponent(jLabel11)
                 .addGap(79, 79, 79)
                 .addComponent(jLabel13, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(65, 65, 65)
+                .addGap(18, 18, 18)
+                .addComponent(jLabel14, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(18, 18, 18)
                 .addComponent(jLabel12, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(401, Short.MAX_VALUE))
+                .addContainerGap(320, Short.MAX_VALUE))
         );
 
         javax.swing.GroupLayout backgroundLayout = new javax.swing.GroupLayout(background);
@@ -1309,7 +1712,7 @@ public class InventoryForm extends javax.swing.JFrame {
     }// </editor-fold>                        
 
     // =================================================================================
-    // EVENT HANDLERS - These match your NetBeans button configurations
+    // EVENT HANDLERS - Enhanced with audit logging
     // =================================================================================
 
     private void categoryActionPerformed(java.awt.event.ActionEvent evt) {                                         
@@ -1330,6 +1733,11 @@ public class InventoryForm extends javax.swing.JFrame {
         
         if (keyword.isEmpty()) {
             sorter.setRowFilter(null); // Show all rows
+            
+            // Log search clear
+            AuditLogger.logInventoryAction(jLabel11.getText(), "SEARCH_CLEAR", "SUCCESS", 
+                "Cleared search filter - showing all items");
+                
             if (!jTextField1.getText().equals("Search items...")) {
                 JOptionPane.showMessageDialog(this, 
                     "Search cleared. Showing all items.", 
@@ -1343,6 +1751,10 @@ public class InventoryForm extends javax.swing.JFrame {
             int visibleRows = inventoryTable.getRowCount();
             DefaultTableModel model = (DefaultTableModel) inventoryTable.getModel();
             int totalRows = model.getRowCount();
+            
+            // Log search operation
+            AuditLogger.logInventoryAction(jLabel11.getText(), "SEARCH_INVENTORY", "SUCCESS", 
+                String.format("Searched for keyword: '%s' - Found %d items out of %d total", keyword, visibleRows, totalRows));
             
             if (visibleRows == 0) {
                 JOptionPane.showMessageDialog(this, 
@@ -1381,9 +1793,14 @@ public class InventoryForm extends javax.swing.JFrame {
         
         try {
             String itemIdText = itemID.getText().trim();
+            String itemNameText = itemName.getText().trim();
             
             // Check for duplicate Item ID
             if (isDuplicateItemId(itemIdText, -1)) {
+                // Log failed attempt to add duplicate item
+                AuditLogger.logInventoryAction(jLabel11.getText(), "ADD_ITEM_FAILED", "FAILED", 
+                    String.format("Attempted to add duplicate Item ID: %s", itemIdText));
+                
                 JOptionPane.showMessageDialog(this, 
                     "Item ID already exists! Please use a different ID.", 
                     "Duplicate ID Error", 
@@ -1412,6 +1829,11 @@ public class InventoryForm extends javax.swing.JFrame {
             // Save to file
             InventoryFileManager.saveToFile(model);
             
+            // Log successful item addition
+            AuditLogger.logInventoryAction(jLabel11.getText(), "ADD_ITEM", "SUCCESS", 
+                String.format("Added new item: ID=%s, Name=%s, Category=%s, Quantity=%s", 
+                itemIdText, itemNameText, getComboBoxValue(category), quantity.getText().trim()));
+            
             // Clear form fields
             clearFields();
             
@@ -1422,6 +1844,10 @@ public class InventoryForm extends javax.swing.JFrame {
                 JOptionPane.INFORMATION_MESSAGE);
                 
         } catch (NumberFormatException ex) {
+            // Log validation error
+            AuditLogger.logInventoryAction(jLabel11.getText(), "ADD_ITEM_FAILED", "FAILED", 
+                "Invalid quantity format: " + quantity.getText());
+                
             JOptionPane.showMessageDialog(this, 
                 "Please enter a valid number for quantity.", 
                 "Invalid Input", 
@@ -1429,6 +1855,10 @@ public class InventoryForm extends javax.swing.JFrame {
             quantity.requestFocus();
             quantity.selectAll();
         } catch (Exception ex) {
+            // Log system error
+            AuditLogger.logInventoryAction(jLabel11.getText(), "ADD_ITEM_ERROR", "FAILED", 
+                "System error during item addition: " + ex.getMessage());
+                
             JOptionPane.showMessageDialog(this, 
                 "Error adding item: " + ex.getMessage(), 
                 "Error", 
@@ -1459,6 +1889,10 @@ public class InventoryForm extends javax.swing.JFrame {
 
         int selectedRow = inventoryTable.getSelectedRow();
         if (selectedRow < 0) {
+            // Log failed attempt to update without selection
+            AuditLogger.logInventoryAction(jLabel11.getText(), "UPDATE_ITEM_FAILED", "FAILED", 
+                "Attempted to update item without selecting a row");
+                
             JOptionPane.showMessageDialog(this, 
                 "Please select a row to update.", 
                 "No Selection", 
@@ -1470,10 +1904,19 @@ public class InventoryForm extends javax.swing.JFrame {
             DefaultTableModel model = (DefaultTableModel) inventoryTable.getModel();
             int modelRow = inventoryTable.convertRowIndexToModel(selectedRow);
             
+            // Get original item details for logging
+            String originalItemId = getValueAsString(model.getValueAt(modelRow, 0));
+            String originalItemName = getValueAsString(model.getValueAt(modelRow, 1));
+            
             String newItemId = itemID.getText().trim();
+            String newItemName = itemName.getText().trim();
             
             // Check for duplicate Item ID (excluding current row)
             if (isDuplicateItemId(newItemId, modelRow)) {
+                // Log failed attempt to update with duplicate ID
+                AuditLogger.logInventoryAction(jLabel11.getText(), "UPDATE_ITEM_FAILED", "FAILED", 
+                    String.format("Attempted to update item %s with duplicate ID: %s", originalItemId, newItemId));
+                    
                 JOptionPane.showMessageDialog(this, 
                     "Item ID already exists! Please use a different ID.", 
                     "Duplicate ID Error", 
@@ -1495,6 +1938,13 @@ public class InventoryForm extends javax.swing.JFrame {
             model.setValueAt(dateAcquired.getText().trim(), modelRow, 7);              // Date Acquired
             
             InventoryFileManager.saveToFile(model);
+            
+            // Log successful item update
+            AuditLogger.logInventoryAction(jLabel11.getText(), "UPDATE_ITEM", "SUCCESS", 
+                String.format("Updated item: Original[ID=%s, Name=%s] -> New[ID=%s, Name=%s, Category=%s, Quantity=%s]", 
+                originalItemId, originalItemName, newItemId, newItemName, 
+                getComboBoxValue(category), quantity.getText().trim()));
+            
             clearFields();
             
             isUpdating = false;
@@ -1506,6 +1956,11 @@ public class InventoryForm extends javax.swing.JFrame {
                 
         } catch (Exception ex) {
             isUpdating = false;
+            
+            // Log system error during update
+            AuditLogger.logInventoryAction(jLabel11.getText(), "UPDATE_ITEM_ERROR", "FAILED", 
+                "System error during item update: " + ex.getMessage());
+                
             JOptionPane.showMessageDialog(this, 
                 "Error updating item: " + ex.getMessage(), 
                 "Error", 
@@ -1521,6 +1976,10 @@ public class InventoryForm extends javax.swing.JFrame {
     private void deleteActionPerformed(java.awt.event.ActionEvent evt) {                                       
         int selectedRow = inventoryTable.getSelectedRow();
         if (selectedRow < 0) {
+            // Log failed attempt to delete without selection
+            AuditLogger.logInventoryAction(jLabel11.getText(), "DELETE_ITEM_FAILED", "FAILED", 
+                "Attempted to delete item without selecting a row");
+                
             JOptionPane.showMessageDialog(this, 
                 "Please select a row to delete.", 
                 "No Selection", 
@@ -1532,17 +1991,24 @@ public class InventoryForm extends javax.swing.JFrame {
             DefaultTableModel model = (DefaultTableModel) inventoryTable.getModel();
             int modelRow = inventoryTable.convertRowIndexToModel(selectedRow);
             
-            // Get item name for confirmation
-            Object itemNameObj = model.getValueAt(modelRow, 1);
-            String itemNameStr = itemNameObj != null ? itemNameObj.toString() : "Unknown Item";
+            // Get item details for confirmation and logging
+            String itemIdToDelete = getValueAsString(model.getValueAt(modelRow, 0));
+            String itemNameToDelete = getValueAsString(model.getValueAt(modelRow, 1));
+            String categoryToDelete = getValueAsString(model.getValueAt(modelRow, 2));
+            String quantityToDelete = getValueAsString(model.getValueAt(modelRow, 3));
 
             int result = JOptionPane.showConfirmDialog(this,
-                "Are you sure you want to delete item: " + itemNameStr + "?",
+                "Are you sure you want to delete item: " + itemNameToDelete + "?",
                 "Confirm Delete",
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.WARNING_MESSAGE);
 
             if (result == JOptionPane.YES_OPTION) {
+                // Log successful item deletion
+                AuditLogger.logInventoryAction(jLabel11.getText(), "DELETE_ITEM", "SUCCESS", 
+                    String.format("Deleted item: ID=%s, Name=%s, Category=%s, Quantity=%s", 
+                    itemIdToDelete, itemNameToDelete, categoryToDelete, quantityToDelete));
+                
                 model.removeRow(modelRow);
                 InventoryFileManager.saveToFile(model);
                 clearFields();
@@ -1551,9 +2017,17 @@ public class InventoryForm extends javax.swing.JFrame {
                     "Item deleted successfully!", 
                     "Success", 
                     JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                // Log cancelled deletion
+                AuditLogger.logInventoryAction(jLabel11.getText(), "DELETE_ITEM_CANCELLED", "INFO", 
+                    String.format("Cancelled deletion of item: ID=%s, Name=%s", itemIdToDelete, itemNameToDelete));
             }
                     
         } catch (Exception ex) {
+            // Log system error during deletion
+            AuditLogger.logInventoryAction(jLabel11.getText(), "DELETE_ITEM_ERROR", "FAILED", 
+                "System error during item deletion: " + ex.getMessage());
+                
             JOptionPane.showMessageDialog(this, 
                 "Error deleting item: " + ex.getMessage(), 
                 "Error", 
@@ -1613,6 +2087,7 @@ public class InventoryForm extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel11;
     private javax.swing.JLabel jLabel12;
     private javax.swing.JLabel jLabel13;
+    private javax.swing.JLabel jLabel14;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
